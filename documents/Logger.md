@@ -237,3 +237,5 @@ from CheeseLog import CheeseLogger
 ## **`def encode(self, content: str) -> str`**
 
     当内容中有`'<'`和`'>'`字符时，进行转义
+
+## **`def destroy(self)`**

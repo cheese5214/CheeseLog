@@ -1,4 +1,5 @@
-import sys, datetime, re, time, os, threading, queue, atexit, io
+import sys, datetime, re, os, threading, queue, atexit, io
+from typing import Self
 
 from CheeseLog import style
 from CheeseLog.message import Message
@@ -10,7 +11,7 @@ TAG_PATTERN_REPL = lambda m: f'\033[{getattr(style, (m.group()[2:] if "/" in m.g
 class CheeseLogger:
     __slots__ = ('_key', 'file_path', 'messages', 'message_template', 'timer_template', 'message_template_styled', '_is_running', '_has_console', 'filter', '_queue', '_thread_handler')
 
-    instances: dict[str, CheeseLogger] = {}
+    instances: dict[str, Self] = {}
     ''' 所有CheeseLogger实例 '''
 
     def __init__(self, key: str | None = None, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: Filter = {}):
@@ -205,10 +206,17 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
         self._queue.put(None)
         try:
             self._thread_handler.join()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             ...
         self._thread_handler = None
         self._is_running = False
+
+    def destroy(self):
+        ''' 销毁日志记录器 '''
+
+        self.stop()
+        if self._key in CheeseLogger.instances:
+            del CheeseLogger.instances[self._key]
 
     def set_filter(self, filter: Filter):
         ''' 设置过滤器 '''
