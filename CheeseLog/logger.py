@@ -5,6 +5,7 @@ from CheeseLog import style
 from CheeseLog.message import Message
 from CheeseLog.filter import Filter
 
+STDOUT_LOCK = threading.Lock()
 TAG_PATTERN = re.compile(r'<.+?>')
 TAG_PATTERN_REPL = lambda m: f'\033[{getattr(style, (m.group()[2:] if "/" in m.group() else m.group()[1:])[:-1].upper())[1 if "/" in m.group() else 0]}m'
 
@@ -259,8 +260,9 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
                     if refresh:
                         content_styled = f'\033[F\033[K{content_styled}'
 
-                    sys.stdout.write(f'{content_styled.replace("%lt;", "<").replace("%gt;", ">")}{end}')
-                    sys.stdout.flush()
+                    with STDOUT_LOCK:
+                        sys.stdout.write(f'{content_styled.replace("%lt;", "<").replace("%gt;", ">")}{end}')
+                        sys.stdout.flush()
 
                 if self.file_path:
                     try:
