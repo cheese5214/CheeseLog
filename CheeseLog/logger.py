@@ -1,18 +1,21 @@
-import sys, datetime, re, os, threading, queue, atexit, io
+import sys, datetime, re, os, threading, queue, atexit, io, _thread, uuid
 from typing import Self
 
 from CheeseLog import style
 from CheeseLog.message import Message
 from CheeseLog.filter import Filter
 
-STDOUT_LOCK = threading.Lock()
 TAG_PATTERN = re.compile(r'<.+?>')
 TAG_PATTERN_REPL = lambda m: f'\033[{getattr(style, (m.group()[2:] if "/" in m.group() else m.group()[1:])[:-1].upper())[1 if "/" in m.group() else 0]}m'
 
 class CheeseLogger:
+    instances: dict[str, Self] = {}
+    ''' 所有日志记录器实例 '''
+    _thread_lock: _thread.LockType = threading.Lock()
+
     __slots__ = ('_key', 'file_path', 'messages', 'message_template', 'timer_template', 'message_template_styled', '_is_running', '_has_console', 'filter', '_queue', '_thread_handler')
 
-    def __init__(self, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: Filter = {}):
+    def __init__(self, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: Filter = {}, key: str | None = None):
         '''
         - Args
             - file_path: 日志文件路径，若不设置则不会写入文件
@@ -68,66 +71,7 @@ class CheeseLogger:
                 - bg_light_cyan
                 - bg_light_white
             - filter: 过滤器
-
-        - Examples:
-```python
-""" 带有日志文件输出的简易应用 """
-from CheeseLog import CheeseLogger, Message
-
-logger = CheeseLogger(file_path = 'logs/%Y-%m-%d.log')
-
-logger.debug('This is a debug message.')
-logger.info('This is an info message.')
-logger.warning('This is a warning message.')
-logger.danger('This is a danger message.')
-logger.error('This is an error message.')
-
-logger.add_message(Message('CUSTOM', 30, message_template_styled = '(<blue>%k</blue>) <black>%t</black> > %c'))
-logger.print('CUSTOM', 'This is a custom message.')
-
-
-""" 简单的消息过滤 """
-from CheeseLog import CheeseLogger, Message
-
-logger = CheeseLogger()
-logger.set_filter({
-    'weight': 20,
-    'message_keys': [ 'FILTERED' ]
-})
-
-low_weight_message = Message('LOW_WEIGHT', 10)
-logger.add_message(low_weight_message)
-high_weight_message = Message('HIGH_WEIGHT', 50)
-logger.add_message(high_weight_message)
-filtered_message = Message('FILTERED', 100)
-logger.add_message(filtered_message)
-
-logger.print('LOW_WEIGHT', 'This is a low weight message.') # 不会输出
-logger.print('HIGH_WEIGHT', 'This is a high weight message.')
-logger.print('FILTERED', 'This is a filtered message.') # 不会输出
-
-
-""" 如何使用进度条实现一个loading效果 """
-import time, random
-
-from CheeseLog import CheeseLogger, Message, ProgressBar
-
-logger = CheeseLogger(file_path = 'logs/%Y-%m-%d.log')
-
-loadingMessage = Message('LOADING')
-logger.add_message(loadingMessage)
-loadedMessage = Message('LOADED', 20, message_template_styled = '(<green>%k</green>) <black>%t</black> > %c')
-logger.add_message(loadedMessage)
-
-progress_bar = ProgressBar()
-i = 0
-while i < 100:
-    bar, bar_styled = progress_bar(i / 100)
-    logger.print('LOADING', bar, bar_styled, refresh = i != 0)
-    time.sleep(random.uniform(0.05, 0.15))
-    i += random.uniform(0.5, 1)
-logger.print('LOADED', 'Loading complete!', refresh = True)
-```
+            - key: 若为`None`，则使用uuid作为默认值
         '''
 
         self.file_path: str | None = file_path
@@ -148,6 +92,7 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
         ''' 带样式的消息模版 '''
         self.filter: Filter = filter
         ''' 过滤器 '''
+        self._key: str = key if key is not None else str(uuid.uuid4())
 
         self._is_running: bool = True
         ''' 是否正在运行 '''
@@ -164,7 +109,29 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
         self.filter['message_keys'] = set(self.filter['message_keys'])
 
         self._thread_handler.start()
+
         atexit.register(self.stop)
+
+    def __getstate__(self) -> dict:
+        state = {
+            key: getattr(self, key) for key in self.__slots__
+        }
+
+        del state['_thread_handler']
+        del state['_queue']
+
+        return state
+
+    def __setstate__(self, state: dict):
+        for key, value in state.items():
+            setattr(self, key, value)
+
+        self._queue = queue.Queue()
+        self._thread_handler = threading.Thread(target = self._thread_handle, daemon = True)
+
+        if self._is_running:
+            self._thread_handler.start()
+            atexit.register(self.stop)
 
     def add_message(self, message: Message):
         ''' 添加消息类型 '''
@@ -184,6 +151,7 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
             return
 
         self._is_running = True
+        atexit.register(self.stop)
         self._thread_handler = threading.Thread(target = self._thread_handle, daemon = True)
         self._thread_handler.start()
 
@@ -194,17 +162,21 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
             return
 
         self._queue.put(None)
-        try:
-            self._thread_handler.join()
-        except (KeyboardInterrupt, SystemExit):
-            ...
-        self._thread_handler = None
+        if self._thread_handler is not None:
+            try:
+                self._thread_handler.join()
+            except (KeyboardInterrupt, SystemExit):
+                ...
+            self._thread_handler = None
+        atexit.unregister(self.stop)
         self._is_running = False
 
     def destroy(self):
         ''' 销毁日志记录器 '''
 
         self.stop()
+        if self._key in CheeseLogger.instances:
+            del CheeseLogger.instances[self._key]
 
     def set_filter(self, filter: Filter):
         ''' 设置过滤器 '''
@@ -247,7 +219,7 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
                     if refresh:
                         content_styled = f'\033[F\033[K{content_styled}'
 
-                    with STDOUT_LOCK:
+                    with CheeseLogger._thread_lock:
                         sys.stdout.write(f'{content_styled.replace("%lt;", "<").replace("%gt;", ">")}{end}')
                         sys.stdout.flush()
 
@@ -376,3 +348,7 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
         ''' 是否有控制台输出 '''
 
         return self._has_console
+
+    @property
+    def key(self) -> str:
+        return self._key

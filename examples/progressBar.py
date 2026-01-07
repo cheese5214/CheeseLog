@@ -1,3 +1,7 @@
+'''
+加载进度条
+'''
+
 import time, random
 
 import __init__

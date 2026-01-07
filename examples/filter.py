@@ -1,3 +1,7 @@
+'''
+消息过滤
+'''
+
 import __init__
 from CheeseLog import CheeseLogger, Message
 

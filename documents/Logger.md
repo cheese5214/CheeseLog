@@ -6,7 +6,7 @@
 from CheeseLog import CheeseLogger
 ```
 
-## **`def __init__(self, key: str | None = None, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: CheeseLog.Filter = {})`**
+## **`def __init__(self, key: str | None = None, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: CheeseLog.Filter = {}, key: str | None = None)`**
 
 - **file_path**
 
@@ -39,6 +39,10 @@ from CheeseLog import CheeseLogger
 - **filter**
 
     过滤器
+
+- **key**
+
+    若为`None`，则使用uuid作为默认值
 
 ## **`self.file_path: str | None`**
 
