@@ -6,10 +6,6 @@
 from CheeseLog import CheeseLogger
 ```
 
-## **`CheeseLogger.instances: dict[str, CheeseLogger] = {}`**
-
-所有CheeseLogger实例
-
 ## **`def __init__(self, key: str | None = None, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: CheeseLog.Filter = {})`**
 
 - **file_path**
@@ -43,8 +39,6 @@ from CheeseLog import CheeseLogger
 - **filter**
 
     过滤器
-
-## **`self.key: str`**
 
 ## **`self.file_path: str | None`**
 

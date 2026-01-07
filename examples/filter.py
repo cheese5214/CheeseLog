@@ -1,7 +1,7 @@
 import __init__
 from CheeseLog import CheeseLogger, Message
 
-logger = CheeseLogger(key = 'myLogger')
+logger = CheeseLogger()
 logger.set_filter({
     'weight': 20,
     'message_keys': [ 'FILTERED' ]

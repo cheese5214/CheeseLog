@@ -21,7 +21,7 @@
 ```python
 from CheeseLog import CheeseLogger, Message
 
-logger = CheeseLogger(key = 'myLogger', file_path = 'logs/%Y-%m-%d.log')
+logger = CheeseLogger(file_path = 'logs/%Y-%m-%d.log')
 
 logger.debug('This is a debug message.')
 logger.info('This is an info message.')
@@ -38,7 +38,7 @@ logger.print('CUSTOM', 'This is a custom message.')
 ```python
 from CheeseLog import CheeseLogger, Message
 
-logger = CheeseLogger(key = 'myLogger')
+logger = CheeseLogger()
 logger.set_filter({
     'weight': 20,
     'message_keys': [ 'FILTERED' ]
@@ -63,7 +63,7 @@ import time, random
 
 from CheeseLog import CheeseLogger, Message, ProgressBar
 
-logger = CheeseLogger(key = 'myLogger', file_path = 'logs/%Y-%m-%d.log')
+logger = CheeseLogger(file_path = 'logs/%Y-%m-%d.log')
 
 loadingMessage = Message('LOADING')
 logger.add_message(loadingMessage)

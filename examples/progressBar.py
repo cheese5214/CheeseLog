@@ -3,7 +3,7 @@ import time, random
 import __init__
 from CheeseLog import CheeseLogger, Message, ProgressBar
 
-logger = CheeseLogger(key = 'myLogger', file_path = 'logs/%Y-%m-%d.log')
+logger = CheeseLogger(file_path = 'logs/%Y-%m-%d.log')
 
 loadingMessage = Message('LOADING')
 logger.add_message(loadingMessage)

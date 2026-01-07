@@ -1,7 +1,7 @@
 import __init__
 from CheeseLog import CheeseLogger, Message
 
-logger = CheeseLogger(key = 'myLogger', file_path = 'logs/%Y-%m-%d.log')
+logger = CheeseLogger(file_path = 'logs/%Y-%m-%d.log')
 
 logger.debug('This is a debug message.')
 logger.info('This is an info message.')

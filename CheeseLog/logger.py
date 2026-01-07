@@ -12,14 +12,8 @@ TAG_PATTERN_REPL = lambda m: f'\033[{getattr(style, (m.group()[2:] if "/" in m.g
 class CheeseLogger:
     __slots__ = ('_key', 'file_path', 'messages', 'message_template', 'timer_template', 'message_template_styled', '_is_running', '_has_console', 'filter', '_queue', '_thread_handler')
 
-    instances: dict[str, Self] = {}
-    ''' 所有CheeseLogger实例 '''
-
-    def __init__(self, key: str | None = None, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: Filter = {}):
+    def __init__(self, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: Filter = {}):
         '''
-        - Static
-            - instances: 所有CheeseLogger实例
-
         - Args
             - file_path: 日志文件路径，若不设置则不会写入文件
             - messages: 消息类型
@@ -80,7 +74,7 @@ class CheeseLogger:
 """ 带有日志文件输出的简易应用 """
 from CheeseLog import CheeseLogger, Message
 
-logger = CheeseLogger(key = 'myLogger', file_path = 'logs/%Y-%m-%d.log')
+logger = CheeseLogger(file_path = 'logs/%Y-%m-%d.log')
 
 logger.debug('This is a debug message.')
 logger.info('This is an info message.')
@@ -95,7 +89,7 @@ logger.print('CUSTOM', 'This is a custom message.')
 """ 简单的消息过滤 """
 from CheeseLog import CheeseLogger, Message
 
-logger = CheeseLogger(key = 'myLogger')
+logger = CheeseLogger()
 logger.set_filter({
     'weight': 20,
     'message_keys': [ 'FILTERED' ]
@@ -118,7 +112,7 @@ import time, random
 
 from CheeseLog import CheeseLogger, Message, ProgressBar
 
-logger = CheeseLogger(key = 'myLogger', file_path = 'logs/%Y-%m-%d.log')
+logger = CheeseLogger(file_path = 'logs/%Y-%m-%d.log')
 
 loadingMessage = Message('LOADING')
 logger.add_message(loadingMessage)
@@ -136,7 +130,6 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
 ```
         '''
 
-        self._key: str = key
         self.file_path: str | None = file_path
         ''' 日志文件路径 '''
         self.messages: dict[str, Message] = {
@@ -172,10 +165,6 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
 
         self._thread_handler.start()
         atexit.register(self.stop)
-
-        if key in CheeseLogger.instances:
-            raise KeyError(f'CheeseLogger "{key}" already exists')
-        CheeseLogger.instances[key] = self
 
     def add_message(self, message: Message):
         ''' 添加消息类型 '''
@@ -216,8 +205,6 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
         ''' 销毁日志记录器 '''
 
         self.stop()
-        if self._key in CheeseLogger.instances:
-            del CheeseLogger.instances[self._key]
 
     def set_filter(self, filter: Filter):
         ''' 设置过滤器 '''
@@ -389,7 +376,3 @@ logger.print('LOADED', 'Loading complete!', refresh = True)
         ''' 是否有控制台输出 '''
 
         return self._has_console
-
-    @property
-    def key(self) -> str:
-        return self._key
