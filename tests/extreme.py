@@ -15,7 +15,8 @@ if __name__ == '__main__':
     logger = CheeseLogger('logs/extreme.log')
 
     max_workers = os.cpu_count()
-    # with concurrent.futures.ProcessPoolExecutor(max_workers = max_workers) as executor:
-    with concurrent.futures.ThreadPoolExecutor(max_workers = max_workers) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers = max_workers) as executor:
         for future in concurrent.futures.as_completed([executor.submit(task, logger) for i in range(max_workers)]):
             future.result()
+
+    logger.info(f'总计用时：{time.time() - now:.2f} 秒')

@@ -187,8 +187,11 @@ class CheeseLogger:
     def _thread_handle(self):
         while True:
             messages = [self._queue.get()]
-            while not self._queue.empty():
-                messages.append(self._queue.get())
+            while True:
+                try:
+                    messages.append(self._queue.get_nowait())
+                except:
+                    break
 
             _log_content: str = ''
             last_file_path: str | None = None
@@ -333,7 +336,7 @@ class CheeseLogger:
         self.print('ERROR', content, content_styled, end = end, refresh = refresh)
 
     def encode(self, content: str) -> str:
-        ''' 当内容中有`'<'`和`'>'`字符时，进行转义 '''
+        ''' 当内容中有和style标签相同时，进行转义 '''
 
         return content.replace('<', '%lt;').replace('>', '%gt;')
 
