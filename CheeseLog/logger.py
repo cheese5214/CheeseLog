@@ -15,7 +15,7 @@ class CheeseLogger:
 
     __slots__ = ('_key', 'file_path', 'messages', 'message_template', 'timer_template', 'message_template_styled', '_is_running', '_has_console', 'filter', '_queue', '_thread_handler')
 
-    def __init__(self, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: Filter | None, key: str | None = None):
+    def __init__(self, file_path: str | None = None, *, messages: dict[str, Message] = {}, message_template: str = '(%k) %t > %c', timer_template: str = '%Y-%m-%d %H:%M:%S.%f', message_template_styled: str = '(<black>%k</black>) <black>%t</black> > %c', filter: Filter | None = None, key: str | None = None):
         '''
         - Args
             - file_path: 日志文件路径，若不设置则不会写入文件
